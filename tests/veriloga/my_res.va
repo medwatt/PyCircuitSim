@@ -1,0 +1,12 @@
+`include "disciplines.vams"
+
+module my_res (p, n);
+    parameter real R = 1k;
+    parameter real m = 1.0;
+    inout p, n;
+    electrical p, n;
+
+    analog begin
+        V(p,n) <+  I(p,n) * R;
+    end
+endmodule
