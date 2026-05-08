@@ -1,10 +1,33 @@
 import re
 from ctypes import c_char_p, Array
 
+# normalize spice text <<<
+def normalize_spice_text(string: str) -> str:
+    """
+    Lowercase SPICE identifiers while preserving quoted substrings.
+
+    This keeps ngspice names case-insensitive without corrupting filesystem
+    paths that are intentionally quoted in .include/.lib/osdi commands.
+    """
+    result = []
+    in_quotes = False
+
+    for char in string:
+        if char == '"':
+            in_quotes = not in_quotes
+            result.append(char)
+        elif in_quotes:
+            result.append(char)
+        else:
+            result.append(char.lower())
+
+    return "".join(result)
+# >>>
+
 # string to bytes <<<
 def str_to_bytes(string: str) -> bytes:
     """Convert a Python string to bytes."""
-    return string.lower().encode("utf-8")
+    return normalize_spice_text(string).encode("utf-8")
 # >>>
 
 # bytes to string <<<

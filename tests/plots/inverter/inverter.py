@@ -1,5 +1,6 @@
 # imports <<<
 import matplotlib.pyplot as plt
+from pathlib import Path
 from pycircuitsim.netlisting import Circuit, SubCircuit
 from pycircuitsim.simulator import NgSpiceSession, simulations
 # >>>
@@ -19,8 +20,9 @@ circuit = Circuit()
 circuit.V("ps", ("ps", "0"), "1")
 circuit.V("in", ("in", "0"), "0.5",)
 circuit.X("inv", nodes=("in", "out", "ps", "0"), subcircuit=inv, params={"w_n": "500n", "w_p": "1u"})
-circuit.include("/home/medwatt/coding/projects/PyCircuitSim/tests/plots/inverter/nmos_vth.inc")
-circuit.include("/home/medwatt/coding/projects/PyCircuitSim/tests/plots/inverter/pmos_vth.inc")
+base_dir = Path(__file__).resolve().parent
+circuit.include("/home/medwatt/git/PyCircuitSim/tests/plots/inverter/nmos_vth.inc")
+circuit.include("/home/medwatt/git/PyCircuitSim/tests/plots/inverter/pmos_vth.inc")
 # >>>
 
 # build netlist <<<

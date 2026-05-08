@@ -60,7 +60,7 @@ class NgSpiceSession:
         """
         for model in self.veriloga_models:
             model.compile_model()
-            self.send_command(f"osdi {str(model)}")
+            self.send_command(f'osdi "{str(model)}"')
     # >>>
 
     # send command <<<

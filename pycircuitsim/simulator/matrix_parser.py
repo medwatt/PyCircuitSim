@@ -20,7 +20,7 @@ class MatrixParser:
 
         with tempfile.NamedTemporaryFile(mode="w+", delete=True) as matrix_file:
             # Dump the matrix data to a temporary file
-            self.send_command(f"mdump {matrix_file.name}")
+            self.send_command(f'mdump "{matrix_file.name}"')
 
             # Parse the matrix file
             matrix_file.seek(0)  # Move to the start of the file
@@ -64,7 +64,7 @@ class MatrixParser:
         """
         with tempfile.NamedTemporaryFile(mode="w+", delete=True) as rhs_file:
             # Dump the RHS data to a temporary file
-            self.send_command(f"mrdump {rhs_file.name}")
+            self.send_command(f'mrdump "{rhs_file.name}"')
 
             # Parse the RHS file
             rhs_file.seek(0)  # Move to the start of the file

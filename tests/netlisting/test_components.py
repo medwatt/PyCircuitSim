@@ -285,6 +285,11 @@ class TestCircuitIntegration:
         lines = c.get_netlist()
         assert lines.index('.include "/path/to/models.sp"') < lines.index("R1 a b 1k")
 
+    def test_include_preserves_path_case(self):
+        c = Circuit("test")
+        c.include("/path/To/Models.sp")
+        assert '.include "/path/To/Models.sp"' in c.get_netlist()
+
     def test_param(self):
         c = Circuit("test")
         c.param(Rval="1k", Cval="100n")
