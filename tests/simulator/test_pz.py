@@ -29,7 +29,7 @@ pz_simulation = simulations.PZ(
 )
 
 # Run simulation
-session.run_simulation(pz_simulation)
+session.run(pz_simulation)
 
 # Get the data
 data = session.get_all_data()

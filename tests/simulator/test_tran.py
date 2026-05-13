@@ -26,7 +26,7 @@ tran_simulation = simulations.Tran(
 )
 
 # Run simulation
-session.run_simulation(tran_simulation)
+session.run(tran_simulation)
 
 # Get the data
 data = session.get_all_data()

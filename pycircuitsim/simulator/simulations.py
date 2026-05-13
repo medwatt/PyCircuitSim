@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, TYPE_CHECKING, cast
 
 from .organizer import (
     DataOrganizer,
@@ -13,24 +13,36 @@ from .organizer import (
     DefaultDataOrganizer,
 )
 
-T = TypeVar('T', bound=DataOrganizer)
+if TYPE_CHECKING:
+    from .session import NgSpiceSession
+
+R = TypeVar("R")
+T = TypeVar("T", bound=DataOrganizer)
+
+
+# runnable <<<
+class Runnable(ABC, Generic[R]):
+    """Anything that can be executed by an NgSpiceSession via session.run(...)."""
+
+    @abstractmethod
+    def execute(self, session: "NgSpiceSession") -> R:
+        pass
+# >>>
 
 
 # abstract class <<<
-class Simulation(ABC, Generic[T]):
+class Simulation(Runnable[T]):
     """
-    Abstract base class for simulations.
+    Abstract base class for single-command simulations.
     """
 
     @abstractmethod
     def build_command(self) -> str:
         pass
 
-    def execute(self, send_command):
-        """
-        Execute the simulation using the provided send_command function.
-        """
-        send_command(self.build_command())
+    def execute(self, session: "NgSpiceSession") -> T:
+        session.send_command(self.build_command())
+        return cast(T, session.get_all_data())
 
     def __str__(self) -> str:
         return self.build_command()
@@ -232,57 +244,6 @@ class Four(Simulation[FourDataOrganizer]):
 # >>>
 
 
-# parametric sweep <<<
-class ParametricSweep:
-    """Runs a simulation repeatedly while sweeping a single component value."""
-
-    def __init__(self, component: str, values: list, simulation: Simulation):
-        """
-        Args:
-            component: Component to alter. Either a simple name (e.g. "R1") or
-                       a full ngspice alter expression for hierarchical instances
-                       (e.g. "@r.xtop.xsub.r1[resistance]").
-            values: Sequence of values to sweep over.
-            simulation: Simulation instance to run at each step.
-        """
-        self.component = component
-        self.values = values
-        self.simulation = simulation
-
-    def run(self, session) -> dict:
-        """Run the sweep and return results keyed by swept value."""
-        results = {}
-        for value in self.values:
-            session.send_command(f"alter {self.component} {value}")
-            results[value] = session.run_simulation(self.simulation)
-        return results
-# >>>
-
-
-# corner analysis <<<
-class CornerAnalysis:
-    """Runs a simulation across a set of named parameter corners."""
-
-    def __init__(self, corners: dict[str, dict], simulation: Simulation):
-        """
-        Args:
-            corners: Mapping of corner name to a dict of {component: value}.
-            simulation: Simulation instance to run at each corner.
-        """
-        self.corners = corners
-        self.simulation = simulation
-
-    def run(self, session) -> dict:
-        """Run the simulation at each corner and return results keyed by corner name."""
-        results = {}
-        for name, params in self.corners.items():
-            for component, value in params.items():
-                session.send_command(f"alter {component} {value}")
-            results[name] = session.run_simulation(self.simulation)
-        return results
-# >>>
-
-
 # noise <<<
 class Noise(Simulation[DefaultDataOrganizer]):
     """
@@ -327,4 +288,53 @@ class Noise(Simulation[DefaultDataOrganizer]):
         if self.pts_per_summary is not None:
             command += f" {self.pts_per_summary}"
         return command
+# >>>
+
+
+# parametric sweep <<<
+class ParametricSweep(Runnable[dict]):
+    """Runs a simulation repeatedly while sweeping a single component value."""
+
+    def __init__(self, component: str, values: list, simulation: Simulation):
+        """
+        Args:
+            component: Component to alter. Either a simple name (e.g. "R1") or
+                       a full ngspice alter expression for hierarchical instances
+                       (e.g. "@r.xtop.xsub.r1[resistance]").
+            values: Sequence of values to sweep over.
+            simulation: Simulation instance to run at each step.
+        """
+        self.component = component
+        self.values = values
+        self.simulation = simulation
+
+    def execute(self, session: "NgSpiceSession") -> dict:
+        results = {}
+        for value in self.values:
+            session.send_command(f"alter {self.component} {value}")
+            results[value] = self.simulation.execute(session)
+        return results
+# >>>
+
+
+# corner analysis <<<
+class CornerAnalysis(Runnable[dict]):
+    """Runs a simulation across a set of named parameter corners."""
+
+    def __init__(self, corners: dict[str, dict], simulation: Simulation):
+        """
+        Args:
+            corners: Mapping of corner name to a dict of {component: value}.
+            simulation: Simulation instance to run at each corner.
+        """
+        self.corners = corners
+        self.simulation = simulation
+
+    def execute(self, session: "NgSpiceSession") -> dict:
+        results = {}
+        for name, params in self.corners.items():
+            for component, value in params.items():
+                session.send_command(f"alter {component} {value}")
+            results[name] = self.simulation.execute(session)
+        return results
 # >>>

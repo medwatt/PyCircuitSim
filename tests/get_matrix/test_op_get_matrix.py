@@ -25,7 +25,7 @@ session = NgSpiceSession()
 session.load_netlist(netlist)
 
 # Run operating point analysis
-data = session.run_simulation(simulations.OP())
+data = session.run(simulations.OP())
 
 # Get matrix
 (m, rhs), vector_names = session.get_matrix()

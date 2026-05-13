@@ -30,7 +30,7 @@ ac_sim = simulations.AC(
 
 
 # Run simulation
-session.run_simulation(ac_sim)
+session.run(ac_sim)
 
 # Get matrix
 (m, rhs), vector_names = session.get_matrix()

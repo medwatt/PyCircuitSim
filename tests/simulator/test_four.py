@@ -26,7 +26,7 @@ tran_simulation = simulations.Tran(
     tstep=1e-6,
     tstop=10e-3,
 )
-session.run_simulation(tran_simulation)
+session.run(tran_simulation)
 
 four_simulation = simulations.Four(
     freq=1e3,
@@ -35,7 +35,7 @@ four_simulation = simulations.Four(
 )
 
 # Run simulation
-session.run_simulation(four_simulation)
+session.run(four_simulation)
 
 # Get the data
 data = session.get_all_data()

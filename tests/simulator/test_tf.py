@@ -31,7 +31,7 @@ tf_sim = simulations.TF(
 )
 
 # Run operating point analysis
-session.run_simulation(tf_sim)
+session.run(tf_sim)
 
 # Get the data
 data = session.get_all_data()

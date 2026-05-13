@@ -31,7 +31,7 @@ noise_sim = simulations.Noise(
 )
 
 # Run simulation
-session.run_simulation(noise_sim)
+session.run(noise_sim)
 
 # Get the data
 data = session.get_all_data()

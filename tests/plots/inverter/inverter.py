@@ -44,7 +44,7 @@ dc_sim = simulations.DC(
 )
 
 # Run a DC sweep
-data = session.run_simulation(dc_sim)
+data = session.run(dc_sim)
 
 # Plot <<<
 vin  = data.voltages["v-sweep"]

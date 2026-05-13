@@ -79,7 +79,7 @@ ac_sim = simulations.AC(
 )
 
 # Run simulation
-session.run_simulation(ac_sim)
+session.run(ac_sim)
 
 # Get the data
 data = session.get_all_data()
@@ -106,7 +106,7 @@ print(alter_commands)
 session.send_command(alter_commands)
 
 # Run simulation
-session.run_simulation(ac_sim)
+session.run(ac_sim)
 
 # Get the data
 data = session.get_all_data()

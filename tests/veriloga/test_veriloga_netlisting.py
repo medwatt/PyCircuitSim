@@ -1,5 +1,5 @@
 # imports <<<
-from pycircuitsim.simulator import NgSpiceSession
+from pycircuitsim.simulator import NgSpiceSession, simulations
 from pycircuitsim.simulator import VerilogaModel
 from pycircuitsim.netlisting.circuit import Circuit
 # >>>
@@ -33,7 +33,7 @@ session.add_veriloga_model(myres)
 session.load_netlist(netlist)
 
 # Run operating point analysis
-session.run_simulation()
+session.run(simulations.OP())
 
 # Get the data
 data = session.get_all_data()

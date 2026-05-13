@@ -25,7 +25,7 @@ session = NgSpiceSession()
 session.load_netlist(netlist)
 
 # Run operating point analysis
-session.run_simulation(simulations.OP())
+session.run(simulations.OP())
 
 # Get the data
 data = session.get_all_data()

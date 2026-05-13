@@ -1,8 +1,8 @@
 # imports <<<
 import numpy as np
-from typing import TypeVar, cast
+from typing import TypeVar
 
-from . import simulations
+from .simulations import Runnable
 from .ngspice import NgSpiceLibrary
 from .organizer import DataOrganizerFactory, DataOrganizer
 from .veriloga_model import VerilogaModel
@@ -15,7 +15,7 @@ from .helpers import (
     extract_simulation_type,
 )
 
-T = TypeVar('T', bound=DataOrganizer)
+R = TypeVar("R")
 # >>>
 
 class NgSpiceSession:
@@ -130,11 +130,11 @@ class NgSpiceSession:
         return (m, rhs), vector_names
     # >>>
 
-    # run simulation <<<
-    def run_simulation(self, simulation: simulations.Simulation[T]) -> T:
+    # run <<<
+    def run(self, runnable: Runnable[R]) -> R:
         """
-        Execute a simulation strategy and return the organized results.
+        Execute any Runnable (Simulation, ParametricSweep, CornerAnalysis,
+        or anything else implementing execute(session)) and return its result.
         """
-        simulation.execute(self.send_command)
-        return cast(T, self.get_all_data())
+        return runnable.execute(self)
     # >>>

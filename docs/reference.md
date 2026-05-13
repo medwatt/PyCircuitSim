@@ -290,7 +290,7 @@ Key methods:
 | Method | Description |
 |--------|-------------|
 | `load_netlist(netlist)` | Load a netlist (list of strings or newline-separated string) |
-| `run_simulation(sim)` | Run a simulation and return the organised result object |
+| `run(runnable)` | Run a `Simulation`, `ParametricSweep`, `CornerAnalysis`, or any other `Runnable` and return its result |
 | `send_command(cmd)` | Send an arbitrary ngspice command string |
 | `get_all_data(plot_name=None)` | Retrieve all vectors from the current (or named) plot |
 | `get_vector_names(plot_name=None)` | List vector names in a plot |
@@ -307,7 +307,7 @@ All simulation classes live in `pycircuitsim.simulator.simulations`.
 ```python
 from pycircuitsim.simulator import simulations
 
-data = session.run_simulation(simulations.OP())
+data = session.run(simulations.OP())
 # data.voltages : dict of node voltages
 # data.currents : dict of branch currents
 ```
@@ -321,7 +321,7 @@ dc = simulations.DC(
     src1=("V1", 0, 2, 0.1),          # (source, start, stop, step)
     src2=("V2", 0, 2, 0.01),         # optional second sweep
 )
-data = session.run_simulation(dc)
+data = session.run(dc)
 ```
 
 #### AC analysis: `AC`
@@ -333,7 +333,7 @@ ac = simulations.AC(
     fstart=1,
     fstop=1e6,
 )
-data = session.run_simulation(ac)
+data = session.run(ac)
 # data.frequency : numpy array of frequency points
 # data.voltages  : dict of complex node voltages
 # data.currents  : dict of complex branch currents
@@ -349,7 +349,7 @@ tran = simulations.Tran(
     tmax=None,     # optional: maximum internal timestep
     uic=False,     # use initial conditions
 )
-data = session.run_simulation(tran)
+data = session.run(tran)
 # data.time     : numpy array of time points
 # data.voltages : dict of node voltages (numpy arrays)
 # data.currents : dict of branch currents (numpy arrays)
@@ -359,7 +359,7 @@ data = session.run_simulation(tran)
 
 ```python
 tf = simulations.TF(output_variable="V(out)", input_source="V1")
-data = session.run_simulation(tf)
+data = session.run(tf)
 ```
 
 #### Pole-zero analysis: `PZ`
@@ -370,14 +370,14 @@ pz = simulations.PZ(
     source_type="vol",    # "vol" or "cur"
     analysis_type="pz",   # "pol", "zer", or "pz"
 )
-data = session.run_simulation(pz)
+data = session.run(pz)
 ```
 
 #### Sensitivity analysis: `Sens`
 
 ```python
 sens = simulations.Sens(output_variable="V(out)")
-data = session.run_simulation(sens)
+data = session.run(sens)
 ```
 
 #### Fourier analysis: `Four`
@@ -385,9 +385,9 @@ data = session.run_simulation(sens)
 Must be run after a transient simulation on the same session.
 
 ```python
-session.run_simulation(simulations.Tran(tstep=1e-6, tstop=1e-3))
+session.run(simulations.Tran(tstep=1e-6, tstop=1e-3))
 four = simulations.Four(freq=1e3, output_variables=["V(out)"], n_harmonics=9)
-data = session.run_simulation(four)
+data = session.run(four)
 ```
 
 #### Noise analysis: `Noise`
@@ -401,13 +401,13 @@ noise = simulations.Noise(
     fstart=1,
     fstop=1e6,
 )
-data = session.run_simulation(noise)
+data = session.run(noise)
 ```
 
 ### Accessing results
 
-`run_simulation()` returns a data organizer object whose available attributes
-depend on the simulation type.
+`session.run(simulation)` returns a data organizer object whose available
+attributes depend on the simulation type.
 
 
 | Attribute | Available in |
@@ -452,7 +452,7 @@ sweep = ParametricSweep(
     simulation=simulations.AC(sweep_type="dec", points=20, fstart=100, fstop=10e6),
 )
 
-results = sweep.run(session)
+results = session.run(sweep)
 
 for r_val, data in results.items():
     print(r_val, data.voltages["out"])
@@ -486,7 +486,7 @@ corners = CornerAnalysis(
     simulation=simulations.AC(sweep_type="dec", points=20, fstart=100, fstop=1e6),
 )
 
-results = corners.run(session)
+results = session.run(corners)
 
 for corner, data in results.items():
     print(corner, data.voltages["out"])
@@ -512,7 +512,7 @@ modifier = ParameterModifier(
 commands = modifier.get_alter_commands()
 session.send_command(commands)
 
-data = session.run_simulation(simulations.AC(sweep_type="dec", points=10, fstart=1, fstop=1e6))
+data = session.run(simulations.AC(sweep_type="dec", points=10, fstart=1, fstop=1e6))
 ```
 
 ### VerilogaModel

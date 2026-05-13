@@ -23,7 +23,7 @@ session.load_netlist(netlist)
 sens_simulation = simulations.Sens(output_variable="V(out)")
 
 # Run simulation
-session.run_simulation(sens_simulation)
+session.run(sens_simulation)
 
 # Get the data
 data = session.get_all_data()

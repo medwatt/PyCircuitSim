@@ -29,7 +29,7 @@ dc_sim = simulations.DC(
 )
 
 # Run operating point analysis
-session.run_simulation(dc_sim)
+session.run(dc_sim)
 
 # Get the data
 data = session.get_all_data()

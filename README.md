@@ -43,7 +43,7 @@ sweep = ParametricSweep(
     simulation=simulations.AC(sweep_type="dec", points=20, fstart=100, fstop=10e6),
 )
 
-results = sweep.run(session)
+results = session.run(sweep)
 
 fig, ax = plt.subplots(figsize=(9, 5))
 

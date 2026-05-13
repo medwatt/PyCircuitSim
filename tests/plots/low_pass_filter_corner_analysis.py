@@ -29,7 +29,7 @@ corners = CornerAnalysis(
     simulation=simulations.AC(sweep_type="dec", points=20, fstart=100, fstop=1e6),
 )
 
-results = corners.run(session)
+results = session.run(corners)
 # >>>
 
 # plot <<<

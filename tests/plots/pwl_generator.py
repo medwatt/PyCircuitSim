@@ -38,7 +38,7 @@ tran_simulation = simulations.Tran(
 )
 
 # Run simulation
-data = session.run_simulation(tran_simulation)
+data = session.run(tran_simulation)
 
 # Plot the waveform
 plt.plot(data.time, data.voltages["nin"])
