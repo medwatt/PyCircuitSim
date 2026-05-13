@@ -2,31 +2,30 @@ import re
 from ctypes import c_char_p, Array
 
 # normalize spice text <<<
-def normalize_spice_text(string: str) -> str:
-    """
-    Lowercase SPICE identifiers while preserving quoted substrings.
+_PATH_DIRECTIVES = frozenset({".include", ".inc", ".lib", "osdi", ".hdl"})
 
-    This keeps ngspice names case-insensitive without corrupting filesystem
-    paths that are intentionally quoted in .include/.lib/osdi commands.
-    """
-    result = []
-    in_quotes = False
 
-    for char in string:
-        if char == '"':
-            in_quotes = not in_quotes
-            result.append(char)
-        elif in_quotes:
-            result.append(char)
-        else:
-            result.append(char.lower())
+def normalize_spice_line(line: str) -> str:
+    """Lowercase a single SPICE line, preserving paths after path-bearing
+    directives (.include/.inc/.lib/osdi/.hdl). Comment lines pass through."""
+    stripped = line.lstrip()
+    if not stripped or stripped[0] == "*":
+        return line
+    first = stripped.split(None, 1)[0]
+    if first.lower() in _PATH_DIRECTIVES:
+        i = line.index(first)
+        return line[:i] + first.lower() + line[i + len(first):]
+    return line.lower()
 
-    return "".join(result)
+
+def normalize_spice_text(text: str) -> str:
+    """Lowercase a SPICE netlist line by line, preserving paths."""
+    return "\n".join(normalize_spice_line(ln) for ln in text.splitlines())
 # >>>
 
 # string to bytes <<<
 def str_to_bytes(string: str) -> bytes:
-    """Convert a Python string to bytes."""
+    """Convert a Python string to bytes, normalizing SPICE case."""
     return normalize_spice_text(string).encode("utf-8")
 # >>>
 
