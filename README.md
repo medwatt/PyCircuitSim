@@ -9,9 +9,39 @@ programmatically through a Python API.
 
 - Python 3.10+
 - numpy
-- ngspice compiled with shared library support (`--with-ngshared`)
+- ngspice with shared library support
 
 ## Installation
+
+### 1. Install ngspice with shared library support
+
+**Debian / Ubuntu**
+
+```bash
+sudo apt install ngspice libngspice0 libngspice0-dev
+```
+
+If your distribution does not ship `libngspice0`, you can build ngspice from
+source with shared library support. Install the build dependencies first:
+
+```bash
+sudo apt install build-essential bison flex libx11-dev libxaw7-dev \
+    libreadline-dev libfftw3-dev
+```
+
+Then download the latest source tarball from
+[ngspice.sourceforge.io](https://ngspice.sourceforge.io/download.html) and
+build:
+
+```bash
+tar xzf ngspice-*.tar.gz && cd ngspice-*/
+mkdir build && cd build
+../configure --with-ngshared --disable-debug CFLAGS="-O2"
+make -j$(nproc) && sudo make install
+sudo ldconfig
+```
+
+### 2. Install PyCircuitSim
 
 ```bash
 pip install git+https://github.com/medwatt/PyCircuitSim.git
@@ -61,8 +91,10 @@ plt.tight_layout()
 plt.show()
 ```
 
+![Parametric sweep result](images/parametric_sweep.svg)
+
 More examples covering transient analysis, corner analysis, subcircuits, and
-the netlisting API can be found in the [`tests/`](tests/) folder.
+the netlisting API can be found in the [`examples/`](examples/) folder.
 
 ## Documentation
 

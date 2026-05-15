@@ -1,44 +1,43 @@
-# imports <<<
-from abc import ABC, abstractmethod
-# >>>
+from dataclasses import dataclass
 
 
-# Abstract Class: Component <<<
-class Component(ABC):
-    @property
-    @abstractmethod
-    def spice_prefix(self) -> str:
-        pass
+@dataclass(slots=True)
+class Component:
+    id: str
+    spice_prefix: str
+    netlist_str: str
 
-    @abstractmethod
     def __str__(self) -> str:
-        pass
-# >>>
+        return self.netlist_str
 
 
-# Class: TwoTerminalComponent <<<
-class TwoTerminalComponent(Component):
-    def __init__(self, id: str, nodes: tuple[str, str], value: str, **params):
-        """
-        Spice Two-terminal component.
+class SubCircuitInstance:
+    """SPICE subcircuit instance (X element). """
 
-        Args:
-            id: Unique identifier for the component.
-            nodes: (plus_node, minus_node)
-            value: Value.
-        """
+    def __init__(
+        self,
+        id: str,
+        nodes: tuple[str, ...],
+        subcircuit: object,
+        params: dict[str, object] | None = None,
+        copy: bool = False,
+    ) -> None:
         self.id = id
         self.nodes = nodes
-        self.value = value
-        self.params = params
-
-    def __str__(self):
-        params_str = " ".join(f"{k}={v}" for k, v in self.params.items())
-        prefix = self.spice_prefix
-        return f'{prefix}{self.id} {" ".join(self.nodes)} {self.value} {params_str}'.strip()
+        self.subcircuit = subcircuit
+        self.params = params or {}
+        self.copy = copy
 
     @property
-    @abstractmethod
     def spice_prefix(self) -> str:
-        pass
-# >>>
+        return "X"
+
+    def __str__(self) -> str:
+        subckt_name = getattr(self.subcircuit, "name", str(self.subcircuit))
+        if self.copy:
+            subckt_name = f"{subckt_name}_{self.id}"
+        params_str = " ".join(f"{k}={v}" for k, v in self.params.items())
+        parts = [f"X{self.id}", " ".join(self.nodes), subckt_name]
+        if params_str:
+            parts.append(params_str)
+        return " ".join(parts)

@@ -9,8 +9,8 @@ from pycircuitsim.netlisting import Circuit
 circuit = Circuit("Half-wave rectifier circuit")
 circuit.VoltageSin("1", ("nin", "0"), amplitude="1", frequency="1k")
 circuit.R("1", ("nin", "nout"), "1k")
-circuit.D("1", ("nout", "0"), model_name="D")
-circuit.define_model(model_name="D", model_type="D", RS="10")
+circuit.D("1", ("nout", "0"), "D")
+circuit.model(name="D", model_type="D", RS="10")
 # >>>
 
 # build netlist <<<

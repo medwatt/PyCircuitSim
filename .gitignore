@@ -28,7 +28,7 @@ pyrightconfig.json
 .pytest_cache/
 
 # Tests
-tests/ota_tb
+examples/ota
 
 # OS
 .DS_Store

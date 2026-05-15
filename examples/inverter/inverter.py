@@ -21,8 +21,8 @@ circuit.V("ps", ("ps", "0"), "1")
 circuit.V("in", ("in", "0"), "0.5",)
 circuit.X("inv", nodes=("in", "out", "ps", "0"), subcircuit=inv, params={"w_n": "500n", "w_p": "1u"})
 base_dir = Path(__file__).resolve().parent
-circuit.include("/home/medwatt/git/PyCircuitSim/tests/plots/inverter/nmos_vth.inc")
-circuit.include("/home/medwatt/git/PyCircuitSim/tests/plots/inverter/pmos_vth.inc")
+circuit.include("./nmos_vth.inc")
+circuit.include("./pmos_vth.inc")
 # >>>
 
 # build netlist <<<
@@ -59,6 +59,6 @@ ax.set_xlim(vin[0], vin[-1])
 ax.set_ylim(0, 1.05)
 ax.grid(True)
 plt.tight_layout()
-plt.savefig("inverter_dc.png", dpi=150)
+plt.savefig("inverter_dc.svg")
 plt.show()
 # >>>

@@ -43,5 +43,6 @@ ax.set_title("RC Low-Pass Filter")
 ax.legend()
 ax.grid(True, which="both", linestyle="--", alpha=0.5)
 plt.tight_layout()
+plt.savefig("parametric_sweep.svg")
 plt.show()
 # >>>

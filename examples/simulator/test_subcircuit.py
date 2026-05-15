@@ -112,6 +112,6 @@ session.run(ac_sim)
 data = session.get_all_data()
 
 # Print result
-print(data.voltages)
-# print(data.voltages["xtop"]["xc1_1"]["n1"])
+# print(data.voltages)
+print(data.voltages["xtop"]["xc1_1"]["n1"])
 # >>>

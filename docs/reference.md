@@ -29,32 +29,13 @@ Python-native workflow for analog circuit simulation. There are two ways to
 define a circuit:
 
 - **Raw netlists**: pass a list of SPICE strings directly, which is useful
-when you already have a netlist or want full control over the syntax.
+  when you already have a netlist or want full control over the syntax.
 
-- **Circuit API**: build the circuit programmatically using Python
-objects, which avoids manual string formatting and makes parameterisation
-easier.
+- **Circuit API**: build the circuit programmatically using Python objects,
+  which avoids manual string formatting and makes parameterisation easier.
 
 Both approaches produce the same result: a list of strings that is loaded into
 an `NgSpiceSession`.
-
----
-
-## Installation
-
-ngspice must be compiled with shared library support before installing PyCircuitSim:
-
-```bash
-# Build ngspice with shared library support
-./configure --with-ngshared
-make && make install
-```
-
-Then install PyCircuitSim:
-
-```bash
-pip install git+https://github.com/medwatt/PyCircuitSim.git
-```
 
 ---
 
@@ -91,7 +72,7 @@ C1 out 0 100n
 
 `Circuit` builds a netlist programmatically. Components are added as method
 calls. Call `get_netlist()` to obtain the list of strings for `load_netlist()`,
-or `print(circuit)` to get the SPICE text.
+or `print(circuit)` to inspect the SPICE text.
 
 ```python
 from pycircuitsim.netlisting import Circuit
@@ -100,10 +81,10 @@ circuit = Circuit("Half-wave rectifier")
 
 circuit.VoltageSin("1", ("nin", "0"), amplitude="1", frequency="1k")
 circuit.R("1", ("nin", "nout"), "1k")
-circuit.D("1", ("nout", "0"), model_name="D")
-circuit.define_model(model_name="D", model_type="D", RS="10")
+circuit.D("1", ("nout", "0"), "D")
+circuit.model("D", "D", RS="10")
 
-print(circuit)           # inspect SPICE text
+print(circuit)
 netlist = circuit.get_netlist()
 ```
 
@@ -115,133 +96,156 @@ circuit.lib("/path/to/process.lib", section="tt")
 circuit.param(VDD="1.8", TEMP="27")
 ```
 
+Initial conditions and nodesets:
+
+```python
+circuit.ic(Vout="0", Vin="1.8")
+circuit.nodeset(Vout="0.9")
+```
+
+Arbitrary SPICE commands can be appended verbatim:
+
+```python
+circuit.raw(".options reltol=1e-5")
+```
+
 ### Components
 
-All component constructors share the signature `(id, nodes, value_or_model,
-**params)`. The `id` is the numeric or alphanumeric suffix appended to the
-component letter (e.g. `"1"` → `R1`). Nodes are given as a tuple of node
-name strings.
+All component methods share the signature `(id, nodes, value_or_model, **params)`.
+The `id` is the numeric or alphanumeric suffix appended to the component letter
+(e.g. `"1"` -> `R1`). Nodes are given as a tuple of node name strings.
+
+Duplicate `id` values for the same component type raise a `ValueError`.
 
 #### Passive
 
 ```python
-from pycircuitsim.netlisting.components.passive import (
-    Resistor, Inductor, Capacitor,
-    MutualInductance,
-    VoltageControlledSwitch, CurrentControlledSwitch,
-    LosslessTransmissionLine,
-)
+circuit.R("1", ("a", "b"), "1k")                          # R1 a b 1k
+circuit.R("2", ("a", "b"), "1k", temp="25")               # R1 a b 1k temp=25
+circuit.L("1", ("a", "b"), "1u")                          # L1 a b 1u
+circuit.C("1", ("a", "b"), "1n")                          # C1 a b 1n
+circuit.K("1", "1", "2", "0.9")                           # K1 L1 L2 0.9
 
-Resistor("1", ("a", "b"), "1k")                        # R1 a b 1k
-Resistor("1", ("a", "b"), "1k", temp="25")             # R1 a b 1k temp=25
-Inductor("1", ("a", "b"), "1u")                        # L1 a b 1u
-Capacitor("1", ("a", "b"), "1n")                       # C1 a b 1n
-MutualInductance("1", "1", "2", "0.9")                 # K1 L1 L2 0.9
+circuit.S("1", ("n1", "n2", "nc1", "nc2"), "MYSW")        # voltage-controlled switch
+circuit.W("1", ("n1", "n2"), "Vctrl", "MYSW")             # current-controlled switch
 
-VoltageControlledSwitch("1", ("n1", "n2", "nc1", "nc2"), "MYSW")
-CurrentControlledSwitch("1", ("n1", "n2"), "Vctrl", "MYSW")
-
-LosslessTransmissionLine("1", ("in", "0", "out", "0"), "50", td="1ns")
-LosslessTransmissionLine("1", ("in", "0", "out", "0"), "75", frequency="1e9")
-```
-
-These are available as methods on `Circuit` and `SubCircuit` without the
-explicit import:
-
-```python
-circuit.R("1", ("a", "b"), "1k")
-circuit.C("1", ("out", "0"), "100n")
-circuit.L("1", ("a", "b"), "1u")
+circuit.T("1", ("in", "0", "out", "0"), "50", td="1ns")        # delay-specified TL
+circuit.T("1", ("in", "0", "out", "0"), "75", frequency="1e9") # frequency-specified TL
 ```
 
 #### Semiconductors
 
 ```python
-from pycircuitsim.netlisting.components.semiconductors import Diode, JFET, Mosfet, BJT
-
-Diode("1", ("anode", "cathode"), "D1N4148")
-JFET("1", ("d", "g", "s"), "NJFET")
-Mosfet("1", ("d", "g", "s", "b"), "NMOS", l="1u", w="10u")
-BJT("1", ("c", "b", "e"), "NPN")
+circuit.D("1", ("anode", "cathode"), "D1N4148")
+circuit.J("1", ("d", "g", "s"), "NJFET")
+circuit.M("1", ("d", "g", "s", "b"), "NMOS", l="1u", w="10u")
+circuit.Q("1", ("c", "b", "e"), "NPN")
 ```
 
-Or via `Circuit`:
+Models are declared with `circuit.model(name, model_type, **params)`:
 
 ```python
-circuit.D("1", ("anode", "cathode"), model_name="D1N4148")
-circuit.M("1", ("d", "g", "s", "b"), model_name="NMOS", l="1u", w="10u")
-circuit.Q("1", ("c", "b", "e"), model_name="NPN")
-```
-
-Models are declared with `define_model`:
-
-```python
-circuit.define_model(model_name="NMOS", model_type="nmos", Kp="190u", Vto="0.57")
+circuit.model("NMOS", "nmos", Kp="190u", Vto="0.57")
+circuit.model("D1N4148", "D", RS="10")
 ```
 
 #### Independent sources
 
 ```python
-from pycircuitsim.netlisting.components.independent import (
-    VoltageSource, CurrentSource,
-    VoltagePulse, CurrentPulse,
-    VoltageSin, CurrentSin,
-    VoltageExp, CurrentExp,
-    VoltagePWL, CurrentPWL,
-    VoltageTransientNoise, CurrentTransientNoise,
-)
-
 # DC source with optional AC magnitude
-VoltageSource("1", ("in", "0"), dc_value="1.8", ac_magnitude="1")
+circuit.V("1", ("in", "0"), dc_value="1.8", ac_magnitude="1")
+circuit.I("1", ("in", "0"), dc_value="1m")
 
 # Sinusoidal
-VoltageSin("1", ("in", "0"), amplitude="1", frequency="1k")
+circuit.VoltageSin("1", ("in", "0"), amplitude="1", frequency="1k")
+circuit.CurrentSin("1", ("in", "0"), amplitude="1m", frequency="1k")
 
 # Pulse
-VoltagePulse("1", ("in", "0"), v1="0", v2="3.3", td="0", tr="1n", tf="1n", pw="500n", per="1u")
+circuit.VoltagePulse("1", ("in", "0"),
+    initial_value="0", pulsed_value="3.3",
+    delay_time="0", rise_time="1n", fall_time="1n",
+    pulse_width="500n", period="1u")
 
-# Piecewise linear: pass a list of (time, value) pairs
-VoltagePWL("1", ("in", "0"), time_value_pairs=[(0, 0), (1e-3, 1), (2e-3, 0)])
+# Exponential
+circuit.VoltageExp("1", ("in", "0"),
+    initial_value="0", pulsed_value="1",
+    rise_delay_time="1n", rise_time_constant="10n",
+    fall_delay_time="100n", fall_time_constant="10n")
+
+# Piecewise linear: list of (time, value) pairs
+circuit.VoltagePWL("1", ("in", "0"), time_value_pairs=[(0, 0), (1e-3, 1), (2e-3, 0)])
+
+# Transient noise
+circuit.VoltageTransientNoise("1", ("in", "0"),
+    rms_noise_amplitude="1u", time_step="1n")
 ```
 
 #### Dependent sources
 
 ```python
-from pycircuitsim.netlisting.components.dependent import (
-    VoltageControlledVoltageSource,
-    VoltageControlledCurrentSource,
-    CurrentControlledVoltageSource,
-    CurrentControlledCurrentSource,
-    BehavioralSource,
-)
+# Voltage-controlled current source (G): nodes = (n+, n-, nc+, nc-)
+circuit.G("1", ("out", "0", "in", "0"), "1m")
 
-VoltageControlledVoltageSource("1", ("out", "0", "in", "0"), gain="10")
-BehavioralSource("1", ("out", "0"), expression="V(a)*V(b)")
+# Voltage-controlled voltage source (E)
+circuit.E("1", ("out", "0", "in", "0"), "10")
+
+# Current-controlled current source (F)
+circuit.F("1", ("out", "0", "n1", "n2"), "5")
+
+# Current-controlled voltage source (H)
+circuit.H("1", ("out", "0", "n1", "n2"), "1k")
+
+# Behavioral source: provide exactly one of the two keyword arguments
+circuit.B("1", ("out", "0"), voltage_expression="V(a)*V(b)")
+circuit.B("2", ("out", "0"), current_expression="I(V1)*2")
+```
+
+#### OSDI / VerilogA instances
+
+Use `circuit.va()` to add a VerilogA model instance. It creates both the `N`
+element and the corresponding `.model` definition automatically.
+
+```python
+circuit.va("1", ("out", "0"), "my_res", R="3k")
+# Produces:
+#   N1 out 0 my_res_1
+#   .model my_res_1 my_res (R=3k)
+```
+
+For a raw `N` element without auto-model:
+
+```python
+circuit.N("1", ("out", "0"), "res_model")
 ```
 
 ### SubCircuit
 
-`SubCircuit` defines a reusable block. It accepts an optional `params` dict
-of default parameter values. Instances are created with `circuit.X(...)`.
+`SubCircuit` defines a reusable block. It accepts an optional `params` dict of
+default parameter values. Instances are created with `circuit.X(...)`.
 
 ```python
 from pycircuitsim.netlisting import Circuit, SubCircuit
 
-# Define a subcircuit
 rc = SubCircuit(
     name="rc_stage",
     nodes=["in", "out"],
-    params={"Rval": "1k", "Cval": "1u"}
+    params={"Rval": "1k", "Cval": "1u"},
 )
 rc.R("1", ("in", "out"), "{Rval}")
 rc.C("1", ("out", "0"), "{Cval}")
 
-# Instantiate it in a top-level circuit
 circuit = Circuit()
-circuit.X("stage1", nodes=("in", "out"), subcircuit=rc)
-circuit.X("stage2", nodes=("in", "out"), subcircuit=rc, params={"Rval": "2k"})
-
+circuit.X("stage1", ("in", "out"), rc)
+circuit.X("stage2", ("in", "out"), rc, params={"Rval": "2k"})
 circuit.V("1", ("in", "0"), "1", ac_magnitude="1")
+```
+
+Pass `copy=True` to give each instance its own independent subcircuit
+definition (useful when instances need different internal component values):
+
+```python
+circuit.X("stage1", ("in", "mid"), rc, copy=True)
+circuit.X("stage2", ("mid", "out"), rc, copy=True)
 ```
 
 SubCircuits can be nested: a `SubCircuit` can instantiate another
@@ -250,8 +254,8 @@ SubCircuits can be nested: a `SubCircuit` can instantiate another
 ### WaveformGenerator
 
 `WaveformGenerator` builds a piecewise-linear (PWL) waveform programmatically
-and returns a list of `(time, value)` pairs that can be passed to
-`VoltagePWL` or `CurrentPWL`.
+and returns a list of `(time, value)` pairs for use with `VoltagePWL` or
+`CurrentPWL`.
 
 ```python
 from pycircuitsim.netlisting import WaveformGenerator
@@ -318,8 +322,8 @@ Sweeps one or two independent sources.
 
 ```python
 dc = simulations.DC(
-    src1=("V1", 0, 2, 0.1),          # (source, start, stop, step)
-    src2=("V2", 0, 2, 0.01),         # optional second sweep
+    src1=("V1", 0, 2, 0.1),     # (source, start, stop, step)
+    src2=("V2", 0, 2, 0.01),    # optional second sweep
 )
 data = session.run(dc)
 ```
@@ -517,15 +521,24 @@ data = session.run(simulations.AC(sweep_type="dec", points=10, fstart=1, fstop=1
 
 ### VerilogaModel
 
-Compiles and loads an OpenVAF/OSDI Verilog-A model before the netlist is
-loaded.
+Compiles and loads an OpenVAF/OSDI Verilog-A model before the netlist is loaded.
 
 ```python
 from pycircuitsim.simulator import VerilogaModel
 
-model = VerilogaModel(source_path="/path/to/model.va")
+model = VerilogaModel(
+    module_name="my_res",
+    path="/path/to/my_res.va",
+    always_recompile=False,
+)
 session.add_veriloga_model(model)
 
 # load_netlist compiles and loads all registered models automatically
 session.load_netlist(netlist)
+```
+
+Instantiate the model in the circuit using `circuit.va()`:
+
+```python
+circuit.va("1", ("out", "0"), model.module_name, R="3k")
 ```

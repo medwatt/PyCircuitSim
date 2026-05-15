@@ -14,8 +14,8 @@ myres = VerilogaModel(
 circuit = Circuit("Operating Point Analysis Test With VerilogA Model")
 circuit.V("1", ("in", "0"), "5")
 circuit.R("1", ("out", "in"), "2k")
-circuit.veriloga("1", ("out", "0"), myres, {"R":"3k"})
-circuit.veriloga("2", ("out", "0"), myres, {"R":"5k"})
+circuit.va("1", ("out", "0"), myres.module_name, R="3k")
+circuit.va("2", ("out", "0"), myres.module_name, R="5k")
 
 netlist = circuit.get_netlist()
 print(circuit)

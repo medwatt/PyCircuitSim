@@ -1,154 +1,105 @@
-from .base import Component, TwoTerminalComponent
+from __future__ import annotations
+
+from .base import Component
 
 
-# Class: Resistor <<<
-class Resistor(TwoTerminalComponent):
-    @property
-    def spice_prefix(self):
-        return "R"
-# >>>
+def R(self, id: str, nodes: tuple[str, str], value: str, **params) -> None:
+    """Add a resistor.
+
+    id: Unique identifier.
+    nodes: (plus_node, minus_node).
+    value: Resistance value.
+    **params: Additional SPICE parameters.
+    """
+    params_str = " ".join(f"{k}={v}" for k, v in params.items())
+    self._add_component(Component(id=id, spice_prefix="R", netlist_str=f"R{id} {' '.join(nodes)} {value} {params_str}".strip()))
 
 
-# Class: Inductor <<<
-class Inductor(TwoTerminalComponent):
-    @property
-    def spice_prefix(self):
-        return "L"
-# >>>
+def L(self, id: str, nodes: tuple[str, str], value: str, **params) -> None:
+    """Add an inductor.
+
+    id: Unique identifier.
+    nodes: (plus_node, minus_node).
+    value: Inductance value.
+    **params: Additional SPICE parameters.
+    """
+    params_str = " ".join(f"{k}={v}" for k, v in params.items())
+    self._add_component(Component(id=id, spice_prefix="L", netlist_str=f"L{id} {' '.join(nodes)} {value} {params_str}".strip()))
 
 
-# Class: Capacitor <<<
-class Capacitor(TwoTerminalComponent):
-    @property
-    def spice_prefix(self):
-        return "C"
-# >>>
+def C(self, id: str, nodes: tuple[str, str], value: str, **params) -> None:
+    """Add a capacitor.
+
+    id: Unique identifier.
+    nodes: (plus_node, minus_node).
+    value: Capacitance value.
+    **params: Additional SPICE parameters.
+    """
+    params_str = " ".join(f"{k}={v}" for k, v in params.items())
+    self._add_component(Component(id=id, spice_prefix="C", netlist_str=f"C{id} {' '.join(nodes)} {value} {params_str}".strip()))
 
 
-# Class: MutualInductance <<<
-class MutualInductance(Component):
-    def __init__(self, id: str, inductor1: str, inductor2: str, coupling: str):
-        """
-        Spice mutual inductance between two inductors (K element).
+def K(self, id: str, inductor1: str, inductor2: str, coupling: str) -> None:
+    """Add mutual inductance between two inductors.
 
-        Args:
-            id: Unique identifier for the mutual inductance.
-            inductor1: ID of the first inductor (without L prefix).
-            inductor2: ID of the second inductor (without L prefix).
-            coupling: Coupling coefficient (0 < k ≤ 1).
-        """
-        self.id = id
-        self.inductor1 = inductor1
-        self.inductor2 = inductor2
-        self.coupling = coupling
-
-    @property
-    def spice_prefix(self):
-        return "K"
-
-    def __str__(self):
-        return f"{self.spice_prefix}{self.id} L{self.inductor1} L{self.inductor2} {self.coupling}"
-# >>>
+    id: Unique identifier.
+    inductor1: ID of the first inductor (without L prefix).
+    inductor2: ID of the second inductor (without L prefix).
+    coupling: Coupling coefficient (0 < k ≤ 1).
+    """
+    self._add_component(Component(id=id, spice_prefix="K", netlist_str=f"K{id} L{inductor1} L{inductor2} {coupling}"))
 
 
-# Class: VoltageControlledSwitch <<<
-class VoltageControlledSwitch(Component):
-    def __init__(self, id: str, nodes: tuple[str, str, str, str], model_name: str, initial_state: str = ""):
-        """
-        Spice voltage-controlled switch (S element).
+def S(self, id: str, nodes: tuple[str, str, str, str], model: str, initial_state: str = "") -> None:
+    """Add a voltage-controlled switch.
 
-        Args:
-            id: Unique identifier for the switch.
-            nodes: (n+, n-, nc+, nc-).
-            model_name: Name of the switch model.
-            initial_state: Initial state, "on" or "off" (optional).
-        """
-        self.id = id
-        self.nodes = nodes
-        self.model_name = model_name
-        self.initial_state = initial_state
-
-    @property
-    def spice_prefix(self):
-        return "S"
-
-    def __str__(self):
-        parts = [f"{self.spice_prefix}{self.id}", " ".join(self.nodes), self.model_name]
-        if self.initial_state:
-            parts.append(self.initial_state)
-        return " ".join(parts)
-# >>>
+    id: Unique identifier.
+    nodes: (n+, n-, nc+, nc-).
+    model: Switch model name.
+    initial_state: Initial state — ``"on"`` or ``"off"`` (optional).
+    """
+    parts = [f"S{id}", " ".join(nodes), model]
+    if initial_state:
+        parts.append(initial_state)
+    self._add_component(Component(id=id, spice_prefix="S", netlist_str=" ".join(parts)))
 
 
-# Class: CurrentControlledSwitch <<<
-class CurrentControlledSwitch(Component):
-    def __init__(self, id: str, nodes: tuple[str, str], source_name: str, model_name: str, initial_state: str = ""):
-        """
-        Spice current-controlled switch (W element).
+def W(self, id: str, nodes: tuple[str, str], source: str, model: str, initial_state: str = "") -> None:
+    """Add a current-controlled switch.
 
-        Args:
-            id: Unique identifier for the switch.
-            nodes: (n+, n-).
-            source_name: Name of the controlling voltage source.
-            model_name: Name of the switch model.
-            initial_state: Initial state, "on" or "off" (optional).
-        """
-        self.id = id
-        self.nodes = nodes
-        self.source_name = source_name
-        self.model_name = model_name
-        self.initial_state = initial_state
-
-    @property
-    def spice_prefix(self):
-        return "W"
-
-    def __str__(self):
-        parts = [f"{self.spice_prefix}{self.id}", " ".join(self.nodes), self.source_name, self.model_name]
-        if self.initial_state:
-            parts.append(self.initial_state)
-        return " ".join(parts)
-# >>>
+    id: Unique identifier.
+    nodes: (n+, n-).
+    source: Name of the controlling voltage source.
+    model: Switch model name.
+    initial_state: Initial state — ``"on"`` or ``"off"`` (optional).
+    """
+    parts = [f"W{id}", " ".join(nodes), source, model]
+    if initial_state:
+        parts.append(initial_state)
+    self._add_component(Component(id=id, spice_prefix="W", netlist_str=" ".join(parts)))
 
 
-# Class: LosslessTransmissionLine <<<
-class LosslessTransmissionLine(Component):
-    def __init__(
-        self,
-        id: str,
-        nodes: tuple[str, str, str, str],
-        impedance: str,
-        td: str = "",
-        frequency: str = "",
-        nl: str = "0.25",
-    ):
-        """
-        Spice lossless transmission line (T element).
+def T(
+    self,
+    id: str,
+    nodes: tuple[str, str, str, str],
+    impedance: str,
+    td: str = "",
+    frequency: str = "",
+    nl: str = "0.25",
+) -> None:
+    """Add a lossless transmission line.
 
-        Args:
-            id: Unique identifier for the transmission line.
-            nodes: (n1+, n1-, n2+, n2-).
-            impedance: Characteristic impedance Z0.
-            td: Transmission delay (optional, specify either td or frequency).
-            frequency: Frequency for NL-based delay specification (optional).
-            nl: Normalized electrical length at frequency (default "0.25").
-        """
-        self.id = id
-        self.nodes = nodes
-        self.impedance = impedance
-        self.td = td
-        self.frequency = frequency
-        self.nl = nl
-
-    @property
-    def spice_prefix(self):
-        return "T"
-
-    def __str__(self):
-        parts = [f"{self.spice_prefix}{self.id}", " ".join(self.nodes), f"Z0={self.impedance}"]
-        if self.td:
-            parts.append(f"TD={self.td}")
-        elif self.frequency:
-            parts.append(f"F={self.frequency} NL={self.nl}")
-        return " ".join(parts)
-# >>>
+    id: Unique identifier.
+    nodes: (n1+, n1-, n2+, n2-).
+    impedance: Characteristic impedance Z0.
+    td: Transmission delay (specify either td or frequency).
+    frequency: Frequency for NL-based delay specification.
+    nl: Normalised electrical length at frequency (default ``"0.25"``).
+    """
+    parts = [f"T{id}", " ".join(nodes), f"Z0={impedance}"]
+    if td:
+        parts.append(f"TD={td}")
+    elif frequency:
+        parts.append(f"F={frequency} NL={nl}")
+    self._add_component(Component(id=id, spice_prefix="T", netlist_str=" ".join(parts)))
